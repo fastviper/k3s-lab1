@@ -15,4 +15,4 @@ chmod +x /usr/local/bin/kubectl
 
 # checks 
 docker ps
-kubectl get nodes
+

@@ -12,8 +12,11 @@ That file is not found in git, it contains AWS_ACCESS_KEY_ID and AWS_SECRET_ACCE
 `terraform plan`
 
 ### actually create nodes
-`terraform apply`
-`terraform show`
+```
+terraform apply
+terraform show
+```
 
 ## K3s is running
-Terraform has ran commands to start k3s cluster via docker-compose, so we are set
+Terraform has ran commands to start k3s cluster via docker-compose, so we are all set
+`kubectl` works from user `ec2-user`

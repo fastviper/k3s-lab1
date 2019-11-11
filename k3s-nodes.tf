@@ -79,7 +79,8 @@ resource "aws_instance" "k3s_master" {
     inline = [
       "sudo bash /tmp/install_k3s_master.sh",
       "K3S_SERVER_IP=${self.public_ip} K3S_SETUP_SECRET=${var.K3S_SETUP_SECRET} /usr/local/bin/docker-compose -f /tmp/k3s-docker-compose.yml up -d",
-      "export KUBECONFIG=/tmp/kubeconfig.yaml",
+      "mkdir -p ~/.kube",
+      "sleep 20; cp /tmp/kubeconfig.yaml ~/.kube/config",
       "kubectl get nodes"
     ]
   }
@@ -108,61 +109,57 @@ resource "aws_instance" "k3s_master" {
 #   }
 # }
 
-# resource "aws_instance" "k3s_node" {
-#   ami           = "ami-010fae13a16763bb4" # Amazon Linux AMI 2018.03.0 (HVM), 64bit, SSD Volume Type 
-#   instance_type = "t2.micro"
-#   key_name = aws_key_pair.deployer_ssh.key_name # use the above key pair
-#   count = 2
-#   depends_on = [aws_instance.k3s_master]
+resource "aws_instance" "k3s_node" {
+  ami           = "ami-010fae13a16763bb4" # Amazon Linux AMI 2018.03.0 (HVM), 64bit, SSD Volume Type 
+  instance_type = "t2.micro"
+  key_name = aws_key_pair.deployer_ssh.key_name # use the above key pair
+  count = 1
+  depends_on = [aws_instance.k3s_master]
 
-#   # no VPC created, public access
-#   # change later to access only from master, but that requies ssh keys to be uploaded to master
-#   vpc_security_group_ids      = ["${aws_security_group.instance.id}"]
-#   associate_public_ip_address = true
-
-#   key_name = aws_key_pair.deployer_ssh.key_name # use the above key pair
+  # no VPC created, public access
+  # change later to access only from master, but that requies ssh keys to be uploaded to master
+  vpc_security_group_ids      = ["${aws_security_group.instance.id}"]
+  associate_public_ip_address = true
   
-#   connection {
-#     type     = "ssh"
-#     user     = "ec2-user"
-#     private_key = file("~/.ssh/id_rsa")
-#     host     = self.public_ip
-#   }
+  connection {
+    type     = "ssh"
+    user     = "ec2-user"
+    private_key = file("~/.ssh/id_rsa")
+    host     = self.public_ip
+  }
 
-#   provisioner "file" {
-#     source      = "k3s-docker-compose.yml"
-#     destination = "/tmp/k3s-docker-compose.yml"
-#   }
+  provisioner "file" {
+    source      = "k3s-docker-compose.yml"
+    destination = "/tmp/k3s-docker-compose.yml"
+  }
 
-#   provisioner "file" {
-#     source      = "install_k3s_master.sh"
-#     destination = "/tmp/install_k3s_master.sh"
-#   }
+  provisioner "file" {
+    source      = "install_k3s_master.sh"
+    destination = "/tmp/install_k3s_master.sh"
+  }
 
-#   provisioner "remote-exec" {
-#     inline = [
-#       "sudo yum -y install docker",
-#       "sudo /etc/init.d/docker start",
-#       "sudo usermod -G docker,wheel ec2-user"
-#     ]
-#   }
+  provisioner "remote-exec" {
+    inline = [
+      "sudo yum -y install docker",
+      "sudo /etc/init.d/docker start",
+      "sudo usermod -G docker,wheel ec2-user"
+    ]
+  }
 
-#   provisioner "remote-exec" {
-#     inline = [
-#       "sudo bash /tmp/install_k3s_master.sh",
-#       "K3S_SERVER_IP=${self.public_ip} K3S_SETUP_SECRET=${var.K3S_SETUP_SECRET} /usr/local/bin/docker-compose -f /tmp/k3s-docker-compose.yml up -d node",
-#       "export KUBECONFIG=/tmp/kubeconfig.yaml",
-#       "kubectl get nodes"
-#     ]
-#   }
+  provisioner "remote-exec" {
+    inline = [
+      "sudo bash /tmp/install_k3s_master.sh",
+      "K3S_SERVER_IP=${aws_instance.k3s_master.public_ip} K3S_SETUP_SECRET=${var.K3S_SETUP_SECRET} /usr/local/bin/docker-compose -f /tmp/k3s-docker-compose.yml up -d node"
+    ]
+  }
 
-# }
+}
 
 
 output "master_ips" {
   value = ["${aws_instance.k3s_master.*.public_ip}"]
 }
 
-# output "instance_ips" {
-#   value = ["${aws_instance.k3s_node.*.public_ip}"]
-# }
+output "instance_ips" {
+  value = ["${aws_instance.k3s_node.*.public_ip}"]
+}

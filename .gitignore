@@ -110,3 +110,5 @@ venv.bak/
 .terraform/
 *.tfstate*
 
+# Visual Studio
+*.code-workspace

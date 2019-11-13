@@ -1,7 +1,7 @@
 version: '3'
 services:
   server:
-    image: rancher/k3s:v0.10.0
+    image: rancher/k3s:v0.9.1  # 0.10.x won't work - https://github.com/rancher/k3s/issues/975 and other issues
     command: server --disable-agent
     environment:
     - K3S_CLUSTER_SECRET=${K3S_SETUP_SECRET}
@@ -16,7 +16,7 @@ services:
     restart: unless-stopped
 
   node:
-    image: rancher/k3s:v0.10.0
+    image: rancher/k3s:v0.9.1
     tmpfs:
     - /run
     - /var/run
